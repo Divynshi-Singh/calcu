@@ -3,9 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Calculator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
+    <div class="calculator">
+        <table>
+            <tr>
+                <td colspan="4" id="result" class="display"></td>
+            </tr>
+            <tr>
+                <td onclick="Display('7')">7</td>
+                <td onclick="Display('8')">8</td>
+                <td onclick="Display('9')">9</td>
+                <td onclick="Display('/')">/</td>
+            </tr>
+            <tr>
+                <td onclick="Display('4')">4</td>
+                <td onclick="Display('5')">5</td>
+                <td onclick="Display('6')">6</td>
+                <td onclick="Display('*')">*</td>
+            </tr>
+            <tr>
+                <td onclick="Display('1')">1</td>
+                <td onclick="Display('2')">2</td>
+                <td onclick="Display('3')">3</td>
+                <td onclick="Display('-')">-</td>
+            </tr>
+            <tr>
+                <td onclick="Display('0')">0</td>
+                <td onclick="Display('.')">.</td>
+                <td onclick="calculateResult()">=</td>
+                <td onclick="Display('+')">+</td>
+            </tr>
+            <tr>
+                <td colspan="4" onclick="clearDisplay()">C</td>
+            </tr>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
 </body>
-</html> 
+</html>
