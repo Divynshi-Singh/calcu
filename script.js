@@ -6,43 +6,75 @@ let operators = [];
 let allowOperators = false;
 
 function inputValue(number) {
-  if (currentInput.includes(".") && number === ".") return; 
+
+  if (currentInput.includes(".") && number === ".") return;
+
+
+  if (number === "-" && currentInput === "") {
+    currentInput = "-";
+    allowOperators = false;
+    updateDisplay();
+    return;
+  }
+
   currentInput += number;
   allowOperators = true;
   updateDisplay();
 }
 
+
 function inputCal(op) {
+  
+  if (currentInput === "" && operators.length > 0) {
+    
+    if ((operators[operators.length - 1] === "*" || operators[operators.length - 1] === "/") && op === "-") {
+      
+      operators[operators.length - 1] = operators[operators.length - 1] + "-";
+      updateDisplay();
+      return;
+    }
+
+    
+    if ((operators[operators.length - 1] === "*-" || operators[operators.length - 1] === "/-") && op !== "*" && op !== "/") {
+      operators[operators.length - 1] = op;
+      updateDisplay();
+      return;
+    }
+  }
+
   
   if (currentInput === "" && op === "-" && operands.length === 0) {
     currentInput = "-";
-    allowOperators = false; 
+    allowOperators = false;
     updateDisplay();
     return;
   }
 
   
   if (currentInput === "" && operators.length > 0) {
-    operators[operators.length - 1] = op; 
+    operators[operators.length - 1] = op;
     updateDisplay();
     return;
   }
 
-
+ 
   if (!allowOperators || currentInput === "") return;
+
+
   operands.push(parseFloat(currentInput));
   operators.push(op);
 
   currentInput = "";
-  allowOperators = false; 
+  allowOperators = false;
   updateDisplay();
 }
+
 
 function clearDisplay() {
   currentInput = "";
   operands = [];
   operators = [];
-  allowOperators = false; 
+  allowOperators = false;
   updateDisplay();
 }
 
@@ -53,13 +85,24 @@ function calculateResult() {
 
   if (operands.length === 0 || operators.length === 0) return;
 
+
   for (let i = 0; i < operators.length; i++) {
     if (operators[i] === "*" || operators[i] === "/") {
       let result;
       if (operators[i] === "*") {
         result = operands[i] * operands[i + 1];
       } else if (operators[i] === "/") {
+        if (operands[i + 1] === 0) {
+
+          currentInput = "Error";
+          updateDisplay();
+          return;
+        }
+
+        
         result = operands[i] / operands[i + 1];
+
+
       }
 
       operands[i] = result;
@@ -69,7 +112,7 @@ function calculateResult() {
     }
   }
 
-  
+
   for (let i = 0; i < operators.length; i++) {
     let result;
     if (operators[i] === "+") {
@@ -93,9 +136,11 @@ function calculateResult() {
 
   operands = [];
   operators = [];
-  allowOperators = true; 
+  allowOperators = true;
   updateDisplay();
 }
+
+
 
 function updateDisplay() {
   if (currentInput === "" && operands.length === 0) {
@@ -116,9 +161,22 @@ function updateDisplay() {
     }
 
     display.value = expression;
-    
   }
 
-   display.scrollLeft = display.scrollWidth;
+
+  display.scrollLeft = display.scrollWidth;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
