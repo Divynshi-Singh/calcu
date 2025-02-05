@@ -1,120 +1,124 @@
-let input = document.getElementById('display'); 
-let buttons = document.querySelectorAll('button');
+let display = document.getElementById("display");
 
-let string = "";
-let arr = Array.from(buttons);
-arr.forEach(button => {
-    button.addEventListener('click', (e) => {
-        let lastChar = string[string.length - 1];
+let currentInput = "";
+let operands = [];
+let operators = [];
+let allowOperators = false;
 
-        if (e.target.innerHTML == '=') {
-            if (string.length === 0) {
-                input.value = "0"; 
-                string = "";
-            } else if (isOperator(lastChar)) {
-                string = string.slice(0, -1); 
-            }
-
-            if (string.length > 0) {
-                try {
-                    string = calculate(string);
-                    input.value = string;
-                } catch (error) {
-                    input.value = "0"; 
-                    string = "";
-                }
-            }
-        } else if (e.target.innerHTML == 'C') {
-            string = "";
-            input.value = "0"; 
-        } else {
-            
-            if (isOperator(e.target.innerHTML)) {
-                
-                if (string.length === 0 && e.target.innerHTML !== '-') {
-                    return; 
-                }
-
-               
-                if ((lastChar === '*' || lastChar === '/') && e.target.innerHTML === '-') {
-                    string += e.target.innerHTML;
-                    input.value = string;
-                    input.scrollLeft = input.scrollWidth; 
-                    return;
-                }
-
-                
-                if (string.length === 1 && string[0] === '-' && isOperator(e.target.innerHTML)) {
-                    return; 
-                }
-
-                
-                if ((lastChar === '+' && e.target.innerHTML === '-') || (lastChar === '-' && e.target.innerHTML === '+')) {
-                    string = string.slice(0, -1); 
-                    string += e.target.innerHTML; 
-                    input.value = string;
-                    input.scrollLeft = input.scrollWidth; 
-                    return;
-                }
-
-                
-                if (lastChar !== '' && isOperator(lastChar) && !(lastChar === '*' || lastChar === '/') && e.target.innerHTML !== '-') {
-                    string = string.slice(0, -1); 
-                }
-
-                string += e.target.innerHTML; 
-                input.value = string;
-                input.scrollLeft = input.scrollWidth; 
-                return;
-            }
-
-           
-            if (string.length === 0 && !isStartingCharacter(e.target.innerHTML)) {
-                return; 
-            }
-
-            
-            if (e.target.innerHTML === '.') {
-                
-                if (string.length === 0 || isOperator(lastChar)) {
-                    string += '0.'; 
-                } else {
-                   
-                    const lastNumber = string.split(/[\+\-\×\÷\*\/]/).pop(); 
-                    if (lastNumber.includes('.')) {
-                        return; 
-                    }
-                    string += '.'; 
-                }
-            } else {
-                
-                string += e.target.innerHTML;
-            }
-
-            input.value = string;
-            input.scrollLeft = input.scrollWidth; 
-        }
-    });
-});
-
-
-function isOperator(char) {
-    return ['+', '-', '×', '÷', '*', '/', '%'].includes(char);
+function inputValue(number) {
+  if (currentInput.includes(".") && number === ".") return; 
+  currentInput += number;
+  allowOperators = true;
+  updateDisplay();
 }
 
+function inputCal(op) {
+  
+  if (currentInput === "" && op === "-" && operands.length === 0) {
+    currentInput = "-";
+    allowOperators = false; 
+    updateDisplay();
+    return;
+  }
 
-function isStartingCharacter(char) {
-    return /^[0-9.\-]$/.test(char);
+  
+  if (currentInput === "" && operators.length > 0) {
+    operators[operators.length - 1] = op; 
+    updateDisplay();
+    return;
+  }
+
+
+  if (!allowOperators || currentInput === "") return;
+  operands.push(parseFloat(currentInput));
+  operators.push(op);
+
+  currentInput = "";
+  allowOperators = false; 
+  updateDisplay();
 }
 
+function clearDisplay() {
+  currentInput = "";
+  operands = [];
+  operators = [];
+  allowOperators = false; 
+  updateDisplay();
+}
 
-function calculate(expression) {
-   
-    let sanitizedExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+function calculateResult() {
+  if (currentInput !== "") {
+    operands.push(parseFloat(currentInput));
+  }
 
-   
-    let result = new Function('return ' + sanitizedExpression)();
+  if (operands.length === 0 || operators.length === 0) return;
+
+  for (let i = 0; i < operators.length; i++) {
+    if (operators[i] === "*" || operators[i] === "/") {
+      let result;
+      if (operators[i] === "*") {
+        result = operands[i] * operands[i + 1];
+      } else if (operators[i] === "/") {
+        result = operands[i] / operands[i + 1];
+      }
+
+      operands[i] = result;
+      operands.splice(i + 1, 1);
+      operators.splice(i, 1);
+      i--;
+    }
+  }
+
+  
+  for (let i = 0; i < operators.length; i++) {
+    let result;
+    if (operators[i] === "+") {
+      result = operands[i] + operands[i + 1];
+    } else if (operators[i] === "-") {
+      result = operands[i] - operands[i + 1];
+    }
+
+    operands[i] = result;
+    operands.splice(i + 1, 1);
+    operators.splice(i, 1);
+    i--;
+  }
+
+  let finalResult = operands[0];
+  if (Number.isInteger(finalResult)) {
+    currentInput = finalResult.toString();
+  } else {
+    currentInput = finalResult.toFixed(2);
+  }
+
+  operands = [];
+  operators = [];
+  allowOperators = true; 
+  updateDisplay();
+}
+
+function updateDisplay() {
+  if (currentInput === "" && operands.length === 0) {
+    display.value = "0";
+  } else {
+    let expression = "";
+
+    if (operands.length > 0) {
+      expression += operands[0];
+    }
+
+    for (let i = 0; i < operators.length; i++) {
+      expression += ` ${operators[i]} ${operands[i + 1] || ""}`;
+    }
+
+    if (currentInput !== "") {
+      expression += ` ${currentInput}`;
+    }
+
+    display.value = expression;
     
-   
-    return parseFloat(result.toFixed(10));
+  }
+
+   display.scrollLeft = display.scrollWidth;
 }
+
