@@ -1,146 +1,120 @@
-
-
-let input = document.getElementById('inputbox');
+let input = document.getElementById('display'); 
 let buttons = document.querySelectorAll('button');
 
 let string = "";
-let operators = ['+', '-', '*', '/', '%'];
-let decimalAdded = false;
-
 let arr = Array.from(buttons);
 arr.forEach(button => {
     button.addEventListener('click', (e) => {
-        let value = e.target.innerHTML;
+        let lastChar = string[string.length - 1];
 
-        if (value === '=') {
-            try {
-                if (operators.includes(string.slice(-1))) {
+        if (e.target.innerHTML == '=') {
+            if (string.length === 0) {
+                input.value = "0"; 
+                string = "";
+            } else if (isOperator(lastChar)) {
+                string = string.slice(0, -1); 
+            }
+
+            if (string.length > 0) {
+                try {
+                    string = calculate(string);
+                    input.value = string;
+                } catch (error) {
+                    input.value = "0"; 
+                    string = "";
+                }
+            }
+        } else if (e.target.innerHTML == 'C') {
+            string = "";
+            input.value = "0"; 
+        } else {
+            
+            if (isOperator(e.target.innerHTML)) {
+                
+                if (string.length === 0 && e.target.innerHTML !== '-') {
+                    return; 
+                }
+
+               
+                if ((lastChar === '*' || lastChar === '/') && e.target.innerHTML === '-') {
+                    string += e.target.innerHTML;
+                    input.value = string;
+                    input.scrollLeft = input.scrollWidth; 
                     return;
                 }
-                string = calculate(string);
+
+                
+                if (string.length === 1 && string[0] === '-' && isOperator(e.target.innerHTML)) {
+                    return; 
+                }
+
+                
+                if ((lastChar === '+' && e.target.innerHTML === '-') || (lastChar === '-' && e.target.innerHTML === '+')) {
+                    string = string.slice(0, -1); 
+                    string += e.target.innerHTML; 
+                    input.value = string;
+                    input.scrollLeft = input.scrollWidth; 
+                    return;
+                }
+
+                
+                if (lastChar !== '' && isOperator(lastChar) && !(lastChar === '*' || lastChar === '/') && e.target.innerHTML !== '-') {
+                    string = string.slice(0, -1); 
+                }
+
+                string += e.target.innerHTML; 
                 input.value = string;
-                decimalAdded = string.includes('.');
-            } catch {
-                input.value = "Error";
-                string = "";
+                input.scrollLeft = input.scrollWidth; 
+                return;
             }
-        } else if (value === 'AC') {
-            string = "";
-            input.value = string;
-            decimalAdded = false;
-        } else if (value === 'DEL') {
-            let lastChar = string.slice(-1);
-            string = string.slice(0, -1);
-            input.value = string;
-            if (lastChar === '.') {
-                decimalAdded = false;
+
+           
+            if (string.length === 0 && !isStartingCharacter(e.target.innerHTML)) {
+                return; 
             }
-        } else {
-            if (operators.includes(value)) {
-                if (string === "" && value !== '-') {
-                    return; 
+
+            
+            if (e.target.innerHTML === '.') {
+                
+                if (string.length === 0 || isOperator(lastChar)) {
+                    string += '0.'; 
+                } else {
+                   
+                    const lastNumber = string.split(/[\+\-\×\÷\*\/]/).pop(); 
+                    if (lastNumber.includes('.')) {
+                        return; 
+                    }
+                    string += '.'; 
                 }
-                if (
-                    operators.includes(string.slice(-1)) &&
-                    !(value === '-' && string.slice(-1) !== '-')
-                ) {
-                    return; 
-                }
-                decimalAdded = false; 
-            } else if (value === '.') {
-                if (decimalAdded || string === "" || operators.includes(string.slice(-1))) {
-                    return; 
-                }
-                decimalAdded = true;
+            } else {
+                
+                string += e.target.innerHTML;
             }
-            string += value;
+
             input.value = string;
+            input.scrollLeft = input.scrollWidth; 
         }
     });
 });
 
 
+function isOperator(char) {
+    return ['+', '-', '×', '÷', '*', '/', '%'].includes(char);
+}
+
+
+function isStartingCharacter(char) {
+    return /^[0-9.\-]$/.test(char);
+}
+
+
 function calculate(expression) {
-    try {
-       
-        expression = expression.replace(/^\-/g, "0-");
-        expression = expression.replace(/(\D)\-/g, "$1 0-");
+   
+    let sanitizedExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
 
-       
-        let tokens = expression.match(/(\d+\.?\d*|[-+*/%])/g);
-        if (!tokens) return "Error";
-
-        let stack = [];
-        let operatorStack = [];
-
-
-        let precedence = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2 };
-        
-       
-        
-        for (let token of tokens) {
-            if (!isNaN(token)) {
-                stack.push(parseFloat(token)); 
-            } else {
-                while (
-                    operatorStack.length &&
-                    precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]
-                ) {
-                    let op = operatorStack.pop();
-                    let b = stack.pop();
-                    let a = stack.pop();
-                    stack.push(applyOperator(a, b, op));
-                }
-                operatorStack.push(token);
-            }
-        }
-
-        
-
-
-        while (operatorStack.length) {
-            let op = operatorStack.pop();
-            let b = stack.pop();
-            let a = stack.pop();
-            stack.push(applyOperator(a, b, op));
-        }
-
-        return stack[0].toString();
-    } catch {
-        return "Error";
-    }
+   
+    let result = new Function('return ' + sanitizedExpression)();
+    
+   
+    return parseFloat(result.toFixed(10));
 }
-
-
-
-function applyOperator(a, b, operator) {
-    switch (operator) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        case '/': return b !== 0 ? a / b : "Error";
-        case '%': return b !== 0 ? a % b : "Error";
-        default: return "Error";
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
