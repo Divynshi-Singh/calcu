@@ -1,182 +1,161 @@
-let display = document.getElementById("display");
+let input = document.getElementById('inputBox');
+let buttons = document.querySelectorAll('button');
 
-let currentInput = "";
-let operands = [];
-let operators = [];
-let allowOperators = false;
-
-function inputValue(number) {
-
-  if (currentInput.includes(".") && number === ".") return;
+let string = '';
+let operators = ['*', '/', '+', '-'];
 
 
-  if (number === "-" && currentInput === "") {
-    currentInput = "-";
-    allowOperators = false;
-    updateDisplay();
-    return;
-  }
+function evaluateExpression(expression) {
+  let numbers = [];
+  let ops = [];
+  let num = '';
+  let i = 0;
 
-  currentInput += number;
-  allowOperators = true;
-  updateDisplay();
-}
-
-
-function inputCal(op) {
-  
-  if (currentInput === "" && operators.length > 0) {
-    
-    if ((operators[operators.length - 1] === "*" || operators[operators.length - 1] === "/") && op === "-") {
-      
-      operators[operators.length - 1] = operators[operators.length - 1] + "-";
-      updateDisplay();
-      return;
+  function applyOperation(a, b, op) {
+    a = parseFloat(a);
+    b = parseFloat(b);
+    switch (op) {
+      case '+':
+        return a + b;
+      case '-':
+        return a - b;
+      case '*':
+        return a * b;
+      case '/':
+        return b !== 0 ? a / b : 'Infinity';
+      default:
+        return 0;
     }
-
-    
-    if ((operators[operators.length - 1] === "*-" || operators[operators.length - 1] === "/-") && op !== "*" && op !== "/") {
-      operators[operators.length - 1] = op;
-      updateDisplay();
-      return;
-    }
-  }
-
-  
-  if (currentInput === "" && op === "-" && operands.length === 0) {
-    currentInput = "-";
-    allowOperators = false;
-    updateDisplay();
-    return;
-  }
-
-  
-  if (currentInput === "" && operators.length > 0) {
-    operators[operators.length - 1] = op;
-    updateDisplay();
-    return;
   }
 
  
-  if (!allowOperators || currentInput === "") return;
+  while (i < expression.length) {
+    const char = expression[i];
 
-
-  operands.push(parseFloat(currentInput));
-  operators.push(op);
-
-  currentInput = "";
-  allowOperators = false;
-  updateDisplay();
-}
-
-
-function clearDisplay() {
-  currentInput = "";
-  operands = [];
-  operators = [];
-  allowOperators = false;
-  updateDisplay();
-}
-
-function calculateResult() {
-  if (currentInput !== "") {
-    operands.push(parseFloat(currentInput));
-  }
-
-  if (operands.length === 0 || operators.length === 0) return;
-
-
-  for (let i = 0; i < operators.length; i++) {
-    if (operators[i] === "*" || operators[i] === "/") {
-      let result;
-      if (operators[i] === "*") {
-        result = operands[i] * operands[i + 1];
-      } else if (operators[i] === "/") {
-        if (operands[i + 1] === 0) {
-
-          currentInput = "Error";
-          updateDisplay();
-          return;
+    if (!isNaN(char) || char === '.') {
+      num += char; 
+    } else if (operators.includes(char)) {
+      if (char === '-' && (i === 0 || operators.includes(expression[i - 1]))) {
+        num += char;
+      } else {
+        if (num !== '') {
+          numbers.push(num);
+          num = '';
         }
 
+        ops.push(char);
+      }
+    }
+    i++;
+  }
+  if (num !== '') numbers.push(num);
+
+ 
+  for (let j = 0; j < ops.length; j++) {
+    if (ops[j] === '*' || ops[j] === '/') {
+      const result = applyOperation(numbers[j], numbers[j + 1], ops[j]);
+      if (result === 'Error') return 'Error';
+      numbers.splice(j, 2, result);
+      ops.splice(j, 1);
+      j--; 
+    }
+  }
+
+ 
+  while (ops.length) {
+    const result = applyOperation(numbers[0], numbers[1], ops[0]);
+    if (result === 'Error') return 'Error';
+    numbers.splice(0, 2, result);
+    ops.splice(0, 1);
+  }
+
+  return numbers[0];
+}
+
+buttons.forEach((button) => {
+  button.addEventListener('click', (e) => {
+    const value = e.target.innerHTML;
+    const lastChar = string[string.length - 1];
+
+    if (value === '=') {
+      const result = evaluateExpression(string);
+      string = result === 'Error' ? '' : result.toString();
+      input.value = result;
+    } else if (value === 'AC') {
+      string = '';
+      input.value = string;
+    } else if (value === 'DEL') {
+      string = string.slice(0, -1);
+      input.value = string;
+    } else if (operators.includes(value)) {
+     
+      if (string === '') {
+        if (value === '-') {
+          string += value; 
+        }
+      } else if (!operators.includes(lastChar)) {
+        string += value; 
+      } else {
         
-        result = operands[i] / operands[i + 1];
-
-
+        string = string.replace(/([*+/\-]){2,}$/, value);
       }
 
-      operands[i] = result;
-      operands.splice(i + 1, 1);
-      operators.splice(i, 1);
-      i--;
+      
+      if (value === '-' && (lastChar === '*' || lastChar === '/')) {
+        string += value; 
+      }
+
+     
+      if (value === '*' && (lastChar === '/' || lastChar === '+')) {
+        string = string.slice(0, -1) + '*'; 
+      }
+
+     
+      if (value === '/' && (lastChar === '*' || lastChar === '+')) {
+        string = string.slice(0, -1) + '/'; 
+      }
+
+      
+      if (
+        value === '+' &&
+        (lastChar === '-' || lastChar === '*' || lastChar === '/')
+      ) {
+        string = string.slice(0, -1) + '+';
+      }
+
+     
+      if (
+        value === '-' &&
+        (lastChar === '*' || lastChar === '/' || lastChar === '+')
+      ) {
+        string = string.slice(0, -1) + '-'; 
+      }
+
+      input.value = string;
+    } else if (value === '.') {
+      const lastOperatorIndex = Math.max(
+        string.lastIndexOf('+'),
+        string.lastIndexOf('-'),
+        string.lastIndexOf('*'),
+        string.lastIndexOf('/')
+      );
+
+      const currentNumber = string.slice(lastOperatorIndex + 1);
+
+      if (!currentNumber.includes('.')) {
+        if (currentNumber === '') {
+          string += '0.';
+        } else {
+          string += value;
+        }
+        input.value = string;
+      }
+    } else {
+      string += value;
+      input.value = string;
     }
-  }
 
-
-  for (let i = 0; i < operators.length; i++) {
-    let result;
-    if (operators[i] === "+") {
-      result = operands[i] + operands[i + 1];
-    } else if (operators[i] === "-") {
-      result = operands[i] - operands[i + 1];
-    }
-
-    operands[i] = result;
-    operands.splice(i + 1, 1);
-    operators.splice(i, 1);
-    i--;
-  }
-
-  let finalResult = operands[0];
-  if (Number.isInteger(finalResult)) {
-    currentInput = finalResult.toString();
-  } else {
-    currentInput = finalResult.toFixed(2);
-  }
-
-  operands = [];
-  operators = [];
-  allowOperators = true;
-  updateDisplay();
-}
-
-
-
-function updateDisplay() {
-  if (currentInput === "" && operands.length === 0) {
-    display.value = "0";
-  } else {
-    let expression = "";
-
-    if (operands.length > 0) {
-      expression += operands[0];
-    }
-
-    for (let i = 0; i < operators.length; i++) {
-      expression += ` ${operators[i]} ${operands[i + 1] || ""}`;
-    }
-
-    if (currentInput !== "") {
-      expression += ` ${currentInput}`;
-    }
-
-    display.value = expression;
-  }
-
-
-  display.scrollLeft = display.scrollWidth;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+    input.scrollLeft = input.scrollWidth;
+  });
+});
